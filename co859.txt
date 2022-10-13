@@ -1,0 +1,98 @@
+/*******************************************************
+	I am Moawiah Nofal, student number 000875260, certify that this material is my original work.
+	No other person's work has been used without due acknowledgment and I have not made my work available to anyone else.
+********************************************************/
+/*******************************************************
+Script: Create co859.txt
+Author: Moawiah Nofal
+Date: Oct 2022
+Description: co859 Database objects for Moawiah Nofal
+********************************************************/
+-- Setting NOCOUNT ON suppresses completion messages for each INSERT
+SET NOCOUNT ON
+-- Set date format to year, month, day
+SET DATEFORMAT ymd;
+-- Make the master database the current database
+USE master
+-- If database co859 exists, drop it
+IF EXISTS (SELECT * FROM sysdatabases WHERE name = 'co859')
+BEGIN
+ALTER DATABASE co859 SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE co859;
+END
+GO
+-- Create the co859 database
+CREATE DATABASE co859;
+GO
+-- Make the co859 database the current database
+USE co859;
+-- Create repairing_services table
+CREATE TABLE repairing_services (
+service_id INT PRIMARY KEY,
+service_description VARCHAR(25),
+service_type CHAR(1) CHECK (service_type IN ('D', 'E', 'T', 'G', 'O')),
+hourly_rate MONEY,
+sales_ytd MONEY);
+-- Create sales table
+CREATE TABLE sales (
+sales_id INT PRIMARY KEY,
+sales_date DATE,
+amount MONEY CHECK (amount >= 0),
+service_id INT);
+GO
+-- Insert repairing_services records
+INSERT INTO repairing_services VALUES(50, 'Detailing', 'D', 100, 600);
+INSERT INTO repairing_services VALUES(60, 'Repair engine', 'E', 170, 3150);
+INSERT INTO repairing_services VALUES(70, 'Repair transmission', 'T', 150, 2090);
+INSERT INTO repairing_services VALUES(80, 'Geberal repair', 'G', 75, 675);
+INSERT INTO repairing_services VALUES(90, 'Oil change', 'O', 50, 140);
+-- Insert sales records
+INSERT INTO sales VALUES(1, '2022-01-02', 200, 50); 
+INSERT INTO sales VALUES(2, '2022-01-07', 1000, 60); 
+INSERT INTO sales VALUES(3, '2022-01-13', 75, 80);
+INSERT INTO sales VALUES(4, '2022-07-15', 50, 90);
+INSERT INTO sales VALUES(5, '2022-07-21', 750, 70);
+INSERT INTO sales VALUES(6, '2022-07-28', 150, 80);
+INSERT INTO sales VALUES(7, '2022-08-02', 400, 50);
+INSERT INTO sales VALUES(8, '2022-08-05', 2000, 60);
+INSERT INTO sales VALUES(9, '2022-08-10', 1200, 70);
+INSERT INTO sales VALUES(10, '2022-08-18', 50, 90);
+INSERT INTO sales VALUES(11, '2022-08-24', 150, 80);
+INSERT INTO sales VALUES(12, '2022-08-30', 300, 80);
+INSERT INTO sales VALUES(13, '2022-09-03', 150, 60);
+INSERT INTO sales VALUES(14, '2022-09-07', 140, 70);
+INSERT INTO sales VALUES(15, '2022-09-09', 75, 50);
+GO
+-- Create verify table
+CREATE TABLE verify (
+table_name varchar(30),
+actual INT,
+expected INT);
+GO
+--Verify inserts for repairing_services and sales tables
+INSERT INTO verify VALUES('repairing_services', (SELECT COUNT(*) FROM 
+repairing_services), 5);
+INSERT INTO verify VALUES('sales', (SELECT COUNT(*) FROM sales), 15);
+PRINT 'Verification';
+SELECT table_name, actual, expected, expected - actual discrepancy FROM 
+verify;
+DROP TABLE verify;
+GO
+--Create an index on service_description column in repairing_services table
+CREATE INDEX IX_repairing_nofal
+ON repairing_services (service_description);
+GO
+
+--Create a view on required columns
+CREATE VIEW  high_end_service
+AS
+SELECT sales_ytd, SUBSTRING(service_description, 1, 15) AS highest_service, service_description
+FROM repairing_services
+WHERE sales_ytd IN (SELECT sales_ytd -- Subquery processed second
+						FROM repairing_services
+						WHERE hourly_rate > (SELECT AVG(hourly_rate) -- Nested subquery processed first
+											FROM repairing_services));
+
+
+
+
